@@ -1,0 +1,1235 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#0d2a4e">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="休暇プラン">
+  <meta name="description" content="2026年9月23日までの予定、今日やること、漫画18ページの進捗を管理するアプリです。">
+  <title>9/23までの休暇プラン</title>
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='16' fill='%230d2a4e'/%3E%3Cpath d='M19 33l9 9 18-21' fill='none' stroke='%230fd3b2' stroke-width='7' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E">
+
+  <style>
+    :root {
+      color-scheme: light;
+      --ink: #10213a;
+      --muted: #607089;
+      --line: #dbe4f0;
+      --surface: #ffffff;
+      --canvas: #f2f6fc;
+      --navy: #0d2a4e;
+      --navy-2: #17416d;
+      --blue: #2f6fed;
+      --teal: #0abf9d;
+      --teal-pale: #dff9f3;
+      --coral: #f05e78;
+      --shadow: 0 14px 34px rgba(27, 52, 87, 0.09);
+      --radius-lg: 26px;
+      --radius-md: 18px;
+      font-family: -apple-system, BlinkMacSystemFont, "Hiragino Sans", "Yu Gothic UI", "Yu Gothic", Meiryo, sans-serif;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html {
+      min-height: 100%;
+      background: var(--canvas);
+      -webkit-text-size-adjust: 100%;
+    }
+
+    body {
+      min-width: 320px;
+      min-height: 100svh;
+      margin: 0;
+      color: var(--ink);
+      background:
+        radial-gradient(circle at 100% 0%, rgba(47, 111, 237, 0.10), transparent 28rem),
+        var(--canvas);
+    }
+
+    button,
+    input {
+      font: inherit;
+    }
+
+    button,
+    input[type="checkbox"] {
+      -webkit-tap-highlight-color: transparent;
+      touch-action: manipulation;
+    }
+
+    .sr-only {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      padding: 0;
+      margin: -1px;
+      overflow: hidden;
+      clip: rect(0, 0, 0, 0);
+      white-space: nowrap;
+      border: 0;
+    }
+
+    .app {
+      width: min(100%, 560px);
+      margin: 0 auto;
+      padding: max(18px, env(safe-area-inset-top)) 16px max(34px, calc(env(safe-area-inset-bottom) + 18px));
+    }
+
+    .app-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      min-height: 48px;
+      margin-bottom: 14px;
+    }
+
+    .app-title {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 1.05rem;
+      font-weight: 800;
+      letter-spacing: 0.02em;
+    }
+
+    .title-mark {
+      display: grid;
+      width: 34px;
+      height: 34px;
+      place-items: center;
+      color: #ffffff;
+      border-radius: 11px;
+      background: var(--navy);
+      box-shadow: 0 7px 16px rgba(13, 42, 78, 0.18);
+    }
+
+    .title-mark svg {
+      width: 20px;
+      height: 20px;
+    }
+
+    .today-date {
+      color: var(--muted);
+      font-size: 0.88rem;
+      font-weight: 700;
+      white-space: nowrap;
+    }
+
+    .countdown-card {
+      position: relative;
+      isolation: isolate;
+      min-height: 220px;
+      padding: 24px;
+      overflow: hidden;
+      color: #ffffff;
+      border-radius: 30px;
+      background: linear-gradient(145deg, var(--navy), var(--navy-2));
+      box-shadow: 0 20px 42px rgba(13, 42, 78, 0.22);
+    }
+
+    .countdown-card::before,
+    .countdown-card::after {
+      position: absolute;
+      z-index: -1;
+      content: "";
+      border-radius: 999px;
+      pointer-events: none;
+    }
+
+    .countdown-card::before {
+      top: -84px;
+      right: -64px;
+      width: 210px;
+      height: 210px;
+      background: rgba(47, 111, 237, 0.42);
+    }
+
+    .countdown-card::after {
+      right: 52px;
+      bottom: -82px;
+      width: 170px;
+      height: 170px;
+      background: rgba(10, 191, 157, 0.22);
+    }
+
+    .deadline-label {
+      margin: 0;
+      color: #c8d9ee;
+      font-size: 0.9rem;
+      font-weight: 700;
+      letter-spacing: 0.04em;
+    }
+
+    .countdown-line {
+      display: flex;
+      align-items: baseline;
+      gap: 8px;
+      min-height: 100px;
+      margin-top: 3px;
+    }
+
+    .countdown-number {
+      font-size: clamp(4.3rem, 22vw, 6rem);
+      font-weight: 850;
+      line-height: 1;
+      letter-spacing: -0.075em;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .countdown-number.is-word {
+      font-size: clamp(2.6rem, 14vw, 4rem);
+      letter-spacing: -0.04em;
+    }
+
+    .countdown-unit {
+      font-size: 1.35rem;
+      font-weight: 800;
+    }
+
+    .next-event {
+      display: inline-flex;
+      align-items: center;
+      gap: 9px;
+      min-height: 38px;
+      max-width: 100%;
+      padding: 8px 13px;
+      margin-top: 12px;
+      color: #eef7ff;
+      font-size: 0.9rem;
+      font-weight: 700;
+      line-height: 1.4;
+      border: 1px solid rgba(255, 255, 255, 0.16);
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.09);
+      backdrop-filter: blur(8px);
+    }
+
+    .next-event::before {
+      flex: 0 0 auto;
+      width: 8px;
+      height: 8px;
+      content: "";
+      border-radius: 50%;
+      background: #28e0bd;
+      box-shadow: 0 0 0 4px rgba(40, 224, 189, 0.13);
+    }
+
+    .section-card {
+      padding: 20px;
+      margin-top: 16px;
+      border: 1px solid rgba(219, 228, 240, 0.82);
+      border-radius: var(--radius-lg);
+      background: var(--surface);
+      box-shadow: var(--shadow);
+    }
+
+    .section-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 16px;
+    }
+
+    .section-header h2 {
+      margin: 0;
+      font-size: 1.12rem;
+      line-height: 1.35;
+      letter-spacing: 0.01em;
+    }
+
+    .section-count {
+      flex: 0 0 auto;
+      min-width: 54px;
+      padding: 6px 10px;
+      color: var(--blue);
+      font-size: 0.84rem;
+      font-weight: 800;
+      text-align: center;
+      border-radius: 999px;
+      background: #eaf1ff;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .schedule-card {
+      padding-bottom: 17px;
+    }
+
+    .schedule-card .section-header {
+      margin-bottom: 12px;
+    }
+
+    .schedule-list {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 10px;
+    }
+
+    .schedule-item {
+      position: relative;
+      min-height: 94px;
+      padding: 14px;
+      border: 1px solid var(--line);
+      border-radius: var(--radius-md);
+      background: #f8faff;
+      transition: border-color 160ms ease, background 160ms ease, transform 160ms ease;
+    }
+
+    .schedule-item.is-today {
+      border-color: #70a0ff;
+      background: #edf4ff;
+      transform: translateY(-1px);
+    }
+
+    .schedule-item.is-past {
+      opacity: 0.58;
+    }
+
+    .schedule-date {
+      display: flex;
+      align-items: baseline;
+      gap: 7px;
+      margin-bottom: 10px;
+    }
+
+    .schedule-date strong {
+      font-size: 1.26rem;
+      line-height: 1;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .schedule-date span {
+      color: var(--muted);
+      font-size: 0.82rem;
+      font-weight: 700;
+    }
+
+    .event-tags {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+    }
+
+    .event-tag {
+      display: inline-flex;
+      min-height: 26px;
+      align-items: center;
+      padding: 4px 8px;
+      color: #23415f;
+      font-size: 0.8rem;
+      font-weight: 750;
+      line-height: 1.25;
+      border-radius: 8px;
+      background: #e4edf8;
+    }
+
+    .event-tag.procedure {
+      color: #8b2740;
+      background: #ffe8ed;
+    }
+
+    .today-pill {
+      position: absolute;
+      top: 11px;
+      right: 11px;
+      display: none;
+      padding: 3px 7px;
+      color: #ffffff;
+      font-size: 0.7rem;
+      font-weight: 800;
+      border-radius: 999px;
+      background: var(--blue);
+    }
+
+    .schedule-item.is-today .today-pill {
+      display: inline-block;
+    }
+
+    .task-list {
+      display: grid;
+      gap: 11px;
+    }
+
+    .task-row {
+      display: grid;
+      grid-template-columns: 48px minmax(0, 1fr);
+      align-items: center;
+      gap: 10px;
+    }
+
+    .task-check {
+      position: relative;
+      display: grid;
+      width: 48px;
+      height: 48px;
+      cursor: pointer;
+      place-items: center;
+      border: 1px solid var(--line);
+      border-radius: 15px;
+      background: #f7f9fc;
+      transition: border-color 160ms ease, background 160ms ease, transform 120ms ease;
+    }
+
+    .task-check:active {
+      transform: scale(0.96);
+    }
+
+    .task-check input {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      opacity: 0;
+    }
+
+    .checkmark {
+      display: grid;
+      width: 25px;
+      height: 25px;
+      color: transparent;
+      place-items: center;
+      border: 2px solid #a9b6c8;
+      border-radius: 8px;
+      background: #ffffff;
+      transition: color 160ms ease, border-color 160ms ease, background 160ms ease;
+    }
+
+    .checkmark svg {
+      width: 16px;
+      height: 16px;
+    }
+
+    .task-check input:checked + .checkmark {
+      color: #ffffff;
+      border-color: var(--teal);
+      background: var(--teal);
+    }
+
+    .task-check:has(input:focus-visible) {
+      outline: 3px solid rgba(47, 111, 237, 0.28);
+      outline-offset: 2px;
+    }
+
+    .task-input {
+      width: 100%;
+      min-width: 0;
+      height: 50px;
+      padding: 0 15px;
+      color: var(--ink);
+      font-size: 1rem;
+      line-height: 1.4;
+      border: 1px solid var(--line);
+      border-radius: 15px;
+      outline: none;
+      background: #fbfcfe;
+      transition: border-color 160ms ease, box-shadow 160ms ease, background 160ms ease;
+    }
+
+    .task-input::placeholder {
+      color: #99a6b7;
+    }
+
+    .task-input:focus {
+      border-color: #78a5ff;
+      background: #ffffff;
+      box-shadow: 0 0 0 4px rgba(47, 111, 237, 0.11);
+    }
+
+    .task-row.is-done .task-input {
+      color: #758399;
+      text-decoration: line-through;
+      border-color: #cdeee6;
+      background: #f2fcf9;
+    }
+
+    .storage-status {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      min-height: 21px;
+      margin: 13px 2px 0;
+      color: var(--muted);
+      font-size: 0.8rem;
+      line-height: 1.45;
+    }
+
+    .storage-status::before {
+      flex: 0 0 auto;
+      width: 7px;
+      height: 7px;
+      content: "";
+      border-radius: 50%;
+      background: var(--teal);
+    }
+
+    .storage-status.is-error {
+      color: #a22d48;
+    }
+
+    .storage-status.is-error::before {
+      background: var(--coral);
+    }
+
+    .manga-summary {
+      display: flex;
+      align-items: flex-end;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 12px;
+    }
+
+    .manga-count {
+      display: flex;
+      align-items: baseline;
+      gap: 5px;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .manga-count strong {
+      color: var(--navy);
+      font-size: 2.15rem;
+      line-height: 1;
+      letter-spacing: -0.04em;
+    }
+
+    .manga-count span {
+      color: var(--muted);
+      font-size: 0.95rem;
+      font-weight: 750;
+    }
+
+    .manga-remaining {
+      margin: 0;
+      color: var(--muted);
+      font-size: 0.88rem;
+      font-weight: 700;
+      text-align: right;
+    }
+
+    .progress-track {
+      height: 11px;
+      overflow: hidden;
+      border-radius: 999px;
+      background: #e8eef6;
+    }
+
+    .progress-fill {
+      width: 0;
+      height: 100%;
+      border-radius: inherit;
+      background: linear-gradient(90deg, var(--blue), var(--teal));
+      transition: width 260ms ease;
+    }
+
+    .pages-label {
+      margin: 17px 0 10px;
+      color: var(--muted);
+      font-size: 0.82rem;
+      font-weight: 700;
+    }
+
+    .pages-grid {
+      display: grid;
+      grid-template-columns: repeat(6, minmax(0, 1fr));
+      gap: 8px;
+    }
+
+    .page-button {
+      position: relative;
+      display: flex;
+      min-width: 0;
+      min-height: 48px;
+      align-items: baseline;
+      justify-content: center;
+      gap: 2px;
+      padding: 0;
+      color: #496078;
+      cursor: pointer;
+      border: 1px solid var(--line);
+      border-radius: 13px;
+      background: #f8faff;
+      transition: color 160ms ease, border-color 160ms ease, background 160ms ease, transform 120ms ease, box-shadow 160ms ease;
+    }
+
+    .page-button span {
+      font-size: 1rem;
+      font-weight: 800;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .page-button small {
+      font-size: 0.64rem;
+      font-weight: 800;
+    }
+
+    .page-button:hover {
+      border-color: #9cbcff;
+    }
+
+    .page-button:focus-visible {
+      outline: 3px solid rgba(47, 111, 237, 0.28);
+      outline-offset: 2px;
+    }
+
+    .page-button:active {
+      transform: scale(0.94);
+    }
+
+    .page-button.is-complete {
+      color: #ffffff;
+      border-color: var(--navy);
+      background: var(--navy);
+      box-shadow: 0 6px 13px rgba(13, 42, 78, 0.14);
+    }
+
+    .page-button.is-complete::after {
+      position: absolute;
+      top: 5px;
+      right: 6px;
+      color: #36dfbd;
+      font-size: 0.62rem;
+      font-weight: 900;
+      content: "✓";
+    }
+
+    .app-footer {
+      padding: 18px 4px 0;
+      color: #7b899c;
+      font-size: 0.75rem;
+      line-height: 1.55;
+      text-align: center;
+    }
+
+    @media (min-width: 680px) {
+      .app {
+        padding-right: 0;
+        padding-left: 0;
+      }
+
+      .section-card {
+        padding: 22px;
+      }
+    }
+
+    @media (max-width: 360px) {
+      .app {
+        padding-right: 12px;
+        padding-left: 12px;
+      }
+
+      .countdown-card {
+        padding: 21px;
+      }
+
+      .section-card {
+        padding: 17px;
+      }
+
+      .schedule-item {
+        padding: 12px;
+      }
+
+      .pages-grid {
+        gap: 6px;
+      }
+
+      .page-button {
+        min-height: 45px;
+        border-radius: 11px;
+      }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      *,
+      *::before,
+      *::after {
+        scroll-behavior: auto !important;
+        transition-duration: 0.01ms !important;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <main class="app">
+    <header class="app-header">
+      <div class="app-title">
+        <span class="title-mark" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none">
+            <path d="m5 12.5 4.2 4.2L19 7" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </span>
+        <span>休暇プラン</span>
+      </div>
+      <time class="today-date" id="today-date" datetime="">読み込み中</time>
+    </header>
+
+    <section class="countdown-card" aria-labelledby="deadline-label">
+      <p class="deadline-label" id="deadline-label">2026年9月23日まで</p>
+      <div class="countdown-line" aria-live="polite" aria-atomic="true">
+        <span class="countdown-number" id="countdown-number">--</span>
+        <span class="countdown-unit" id="countdown-unit">日</span>
+      </div>
+      <p class="next-event" id="next-event">予定を確認しています</p>
+    </section>
+
+    <section class="section-card schedule-card" aria-labelledby="schedule-heading">
+      <div class="section-header">
+        <h2 id="schedule-heading">入院の予定</h2>
+      </div>
+      <div class="schedule-list">
+        <article class="schedule-item" data-date="2026-09-16">
+          <time class="schedule-date" datetime="2026-09-16">
+            <strong>9/16</strong><span>水</span>
+          </time>
+          <div class="event-tags">
+            <span class="event-tag">入院</span>
+          </div>
+          <span class="today-pill">今日</span>
+        </article>
+
+        <article class="schedule-item" data-date="2026-09-17">
+          <time class="schedule-date" datetime="2026-09-17">
+            <strong>9/17</strong><span>木</span>
+          </time>
+          <div class="event-tags">
+            <span class="event-tag">入院</span>
+            <span class="event-tag procedure">大腸内視鏡</span>
+          </div>
+          <span class="today-pill">今日</span>
+        </article>
+      </div>
+    </section>
+
+    <section class="section-card" aria-labelledby="tasks-heading">
+      <div class="section-header">
+        <h2 id="tasks-heading">今日やること</h2>
+        <span class="section-count" id="task-count" aria-live="polite">0/3</span>
+      </div>
+
+      <div class="task-list">
+        <div class="task-row" data-task-row="0">
+          <label class="task-check" for="task-done-0">
+            <span class="sr-only">1つ目を完了にする</span>
+            <input id="task-done-0" type="checkbox" data-task-check="0">
+            <span class="checkmark" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none">
+                <path d="m5 12.5 4.2 4.2L19 7" stroke="currentColor" stroke-width="2.7" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+            </span>
+          </label>
+          <label class="sr-only" for="task-text-0">今日やること 1</label>
+          <input class="task-input" id="task-text-0" data-task-input="0" type="text" maxlength="120" placeholder="1つ目を入力" autocomplete="off" enterkeyhint="next">
+        </div>
+
+        <div class="task-row" data-task-row="1">
+          <label class="task-check" for="task-done-1">
+            <span class="sr-only">2つ目を完了にする</span>
+            <input id="task-done-1" type="checkbox" data-task-check="1">
+            <span class="checkmark" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none">
+                <path d="m5 12.5 4.2 4.2L19 7" stroke="currentColor" stroke-width="2.7" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+            </span>
+          </label>
+          <label class="sr-only" for="task-text-1">今日やること 2</label>
+          <input class="task-input" id="task-text-1" data-task-input="1" type="text" maxlength="120" placeholder="2つ目を入力" autocomplete="off" enterkeyhint="next">
+        </div>
+
+        <div class="task-row" data-task-row="2">
+          <label class="task-check" for="task-done-2">
+            <span class="sr-only">3つ目を完了にする</span>
+            <input id="task-done-2" type="checkbox" data-task-check="2">
+            <span class="checkmark" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none">
+                <path d="m5 12.5 4.2 4.2L19 7" stroke="currentColor" stroke-width="2.7" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+            </span>
+          </label>
+          <label class="sr-only" for="task-text-2">今日やること 3</label>
+          <input class="task-input" id="task-text-2" data-task-input="2" type="text" maxlength="120" placeholder="3つ目を入力" autocomplete="off" enterkeyhint="done">
+        </div>
+      </div>
+
+      <p class="storage-status" id="storage-status" aria-live="polite">このiPhoneに自動保存</p>
+    </section>
+
+    <section class="section-card" aria-labelledby="manga-heading">
+      <div class="section-header">
+        <h2 id="manga-heading">漫画のペン入れ進捗</h2>
+        <span class="section-count" id="manga-percent">56%</span>
+      </div>
+
+      <div class="manga-summary">
+        <div class="manga-count">
+          <strong id="manga-complete">10</strong>
+          <span>/ 18P</span>
+        </div>
+        <p class="manga-remaining" id="manga-remaining">残り8ページ</p>
+      </div>
+
+      <div class="progress-track" id="manga-progress" role="progressbar" aria-label="漫画のペン入れ進捗" aria-valuemin="0" aria-valuemax="18" aria-valuenow="10">
+        <div class="progress-fill" id="progress-fill"></div>
+      </div>
+
+      <p class="pages-label">終わったページをタップ</p>
+      <div class="pages-grid" id="pages-grid" aria-label="1ページから18ページまでの進捗"></div>
+    </section>
+
+    <footer class="app-footer">
+      入力内容とチェック状態は、この端末のブラウザ内に保存されます。
+    </footer>
+  </main>
+
+  <script>
+    (() => {
+      "use strict";
+
+      const TARGET_DATE = { year: 2026, month: 9, day: 23 };
+      const DAY_MS = 24 * 60 * 60 * 1000;
+      const STATE_KEY = "kyuka-plan-2026-v1";
+      const TOTAL_PAGES = 18;
+      const INITIAL_COMPLETE_PAGES = 10;
+      const SCHEDULE = [
+        { date: "2026-09-16", shortDate: "9/16", label: "入院" },
+        { date: "2026-09-17", shortDate: "9/17", label: "入院・大腸内視鏡" }
+      ];
+
+      const elements = {
+        todayDate: document.getElementById("today-date"),
+        countdownNumber: document.getElementById("countdown-number"),
+        countdownUnit: document.getElementById("countdown-unit"),
+        nextEvent: document.getElementById("next-event"),
+        scheduleItems: [...document.querySelectorAll(".schedule-item")],
+        taskCount: document.getElementById("task-count"),
+        taskRows: [...document.querySelectorAll("[data-task-row]")],
+        taskInputs: [...document.querySelectorAll("[data-task-input]")],
+        taskChecks: [...document.querySelectorAll("[data-task-check]")],
+        storageStatus: document.getElementById("storage-status"),
+        mangaComplete: document.getElementById("manga-complete"),
+        mangaPercent: document.getElementById("manga-percent"),
+        mangaRemaining: document.getElementById("manga-remaining"),
+        mangaProgress: document.getElementById("manga-progress"),
+        progressFill: document.getElementById("progress-fill"),
+        pagesGrid: document.getElementById("pages-grid")
+      };
+
+      let storageAvailable = true;
+      let activeTaskDate = "";
+      let state = loadState();
+      let pageButtons = [];
+
+      function blankTasks() {
+        return Array.from({ length: 3 }, () => ({ text: "", done: false }));
+      }
+
+      function defaultPages() {
+        return Array.from(
+          { length: TOTAL_PAGES },
+          (_, index) => index < INITIAL_COMPLETE_PAGES
+        );
+      }
+
+      function sanitizeTasks(value) {
+        const tasks = blankTasks();
+        if (!Array.isArray(value)) return tasks;
+
+        for (let index = 0; index < 3; index += 1) {
+          const item = value[index];
+          if (!item || typeof item !== "object") continue;
+          tasks[index] = {
+            text: typeof item.text === "string" ? item.text.slice(0, 120) : "",
+            done: Boolean(item.done)
+          };
+        }
+        return tasks;
+      }
+
+      function loadState() {
+        const fallback = { tasksByDate: {}, mangaPages: defaultPages() };
+
+        try {
+          const raw = window.localStorage.getItem(STATE_KEY);
+          if (!raw) return fallback;
+
+          const parsed = JSON.parse(raw);
+          const tasksByDate = {};
+
+          if (parsed && parsed.tasksByDate && typeof parsed.tasksByDate === "object") {
+            Object.entries(parsed.tasksByDate).forEach(([date, tasks]) => {
+              if (/^\d{4}-\d{2}-\d{2}$/.test(date)) {
+                tasksByDate[date] = sanitizeTasks(tasks);
+              }
+            });
+          }
+
+          const mangaPages = Array.isArray(parsed?.mangaPages) && parsed.mangaPages.length === TOTAL_PAGES
+            ? parsed.mangaPages.map(Boolean)
+            : defaultPages();
+
+          return { tasksByDate, mangaPages };
+        } catch (error) {
+          storageAvailable = false;
+          return fallback;
+        }
+      }
+
+      function saveState() {
+        try {
+          window.localStorage.setItem(
+            STATE_KEY,
+            JSON.stringify({ ...state, updatedAt: new Date().toISOString() })
+          );
+          storageAvailable = true;
+          setStorageStatus("このiPhoneに自動保存", false);
+        } catch (error) {
+          storageAvailable = false;
+          setStorageStatus("保存できませんでした。ブラウザの設定を確認してください", true);
+        }
+      }
+
+      function setStorageStatus(message, isError) {
+        elements.storageStatus.textContent = message;
+        elements.storageStatus.classList.toggle("is-error", isError);
+      }
+
+      function japanDateParts(date = new Date()) {
+        const parts = new Intl.DateTimeFormat("ja-JP-u-ca-gregory", {
+          timeZone: "Asia/Tokyo",
+          year: "numeric",
+          month: "2-digit",
+          day: "2-digit",
+          weekday: "short"
+        }).formatToParts(date);
+
+        const pick = (type) => parts.find((part) => part.type === type)?.value ?? "";
+        const year = Number(pick("year"));
+        const month = Number(pick("month"));
+        const day = Number(pick("day"));
+
+        return {
+          year,
+          month,
+          day,
+          weekday: pick("weekday"),
+          key: `${year}-${String(month).padStart(2, "0")}-${String(day).padStart(2, "0")}`
+        };
+      }
+
+      function calendarDayNumber(year, month, day) {
+        return Date.UTC(year, month - 1, day) / DAY_MS;
+      }
+
+      function daysUntilTarget(parts) {
+        return calendarDayNumber(TARGET_DATE.year, TARGET_DATE.month, TARGET_DATE.day)
+          - calendarDayNumber(parts.year, parts.month, parts.day);
+      }
+
+      function renderDateContext() {
+        const today = japanDateParts();
+        const remaining = daysUntilTarget(today);
+
+        elements.todayDate.textContent = `${today.month}月${today.day}日（${today.weekday}）`;
+        elements.todayDate.dateTime = today.key;
+
+        elements.countdownNumber.classList.remove("is-word");
+        if (remaining > 0) {
+          elements.countdownNumber.textContent = String(remaining);
+          elements.countdownUnit.textContent = "日";
+        } else if (remaining === 0) {
+          elements.countdownNumber.textContent = "今日";
+          elements.countdownNumber.classList.add("is-word");
+          elements.countdownUnit.textContent = "";
+        } else {
+          elements.countdownNumber.textContent = "終了";
+          elements.countdownNumber.classList.add("is-word");
+          elements.countdownUnit.textContent = "";
+        }
+
+        const todayEvent = SCHEDULE.find((item) => item.date === today.key);
+        const upcomingEvent = SCHEDULE.find((item) => item.date > today.key);
+
+        if (todayEvent) {
+          elements.nextEvent.textContent = `今日の予定｜${todayEvent.label}`;
+        } else if (upcomingEvent) {
+          elements.nextEvent.textContent = `次の予定｜${upcomingEvent.shortDate} ${upcomingEvent.label}`;
+        } else if (remaining >= 0) {
+          elements.nextEvent.textContent = "目標日｜9/23 ペン入れ完了";
+        } else {
+          elements.nextEvent.textContent = "9/23の目標日を過ぎました";
+        }
+
+        elements.scheduleItems.forEach((item) => {
+          const date = item.dataset.date;
+          item.classList.toggle("is-today", date === today.key);
+          item.classList.toggle("is-past", date < today.key);
+        });
+
+        if (activeTaskDate !== today.key) {
+          activeTaskDate = today.key;
+          ensureTasksForActiveDate();
+          renderTasks();
+        }
+      }
+
+      function ensureTasksForActiveDate() {
+        if (!state.tasksByDate[activeTaskDate]) {
+          state.tasksByDate[activeTaskDate] = blankTasks();
+        }
+        return state.tasksByDate[activeTaskDate];
+      }
+
+      function renderTasks() {
+        const tasks = ensureTasksForActiveDate();
+
+        tasks.forEach((task, index) => {
+          elements.taskInputs[index].value = task.text;
+          elements.taskChecks[index].checked = task.done;
+        });
+        updateTaskPresentation();
+      }
+
+      function updateTaskPresentation() {
+        const tasks = ensureTasksForActiveDate();
+        const complete = tasks.filter((task) => task.done).length;
+        elements.taskCount.textContent = `${complete}/3`;
+
+        tasks.forEach((task, index) => {
+          elements.taskRows[index].classList.toggle("is-done", task.done);
+          const taskName = task.text.trim() || `${index + 1}つ目`;
+          elements.taskChecks[index].setAttribute(
+            "aria-label",
+            `${taskName}を${task.done ? "未完了" : "完了"}にする`
+          );
+        });
+      }
+
+      function buildPageButtons() {
+        const fragment = document.createDocumentFragment();
+
+        for (let index = 0; index < TOTAL_PAGES; index += 1) {
+          const button = document.createElement("button");
+          const number = document.createElement("span");
+          const unit = document.createElement("small");
+
+          button.type = "button";
+          button.className = "page-button";
+          button.dataset.pageIndex = String(index);
+          number.textContent = String(index + 1);
+          unit.textContent = "P";
+          button.append(number, unit);
+          button.addEventListener("click", () => {
+            state.mangaPages[index] = !state.mangaPages[index];
+            saveState();
+            renderManga();
+          });
+
+          fragment.appendChild(button);
+        }
+
+        elements.pagesGrid.appendChild(fragment);
+        pageButtons = [...elements.pagesGrid.querySelectorAll(".page-button")];
+      }
+
+      function renderManga() {
+        const complete = state.mangaPages.filter(Boolean).length;
+        const percent = Math.round((complete / TOTAL_PAGES) * 100);
+        const remaining = TOTAL_PAGES - complete;
+
+        elements.mangaComplete.textContent = String(complete);
+        elements.mangaPercent.textContent = `${percent}%`;
+        elements.mangaRemaining.textContent = remaining === 0
+          ? "全ページ完了！"
+          : `残り${remaining}ページ`;
+        elements.progressFill.style.width = `${percent}%`;
+        elements.mangaProgress.setAttribute("aria-valuenow", String(complete));
+        elements.mangaProgress.setAttribute("aria-valuetext", `${TOTAL_PAGES}ページ中${complete}ページ完了`);
+
+        pageButtons.forEach((button, index) => {
+          const done = state.mangaPages[index];
+          button.classList.toggle("is-complete", done);
+          button.setAttribute("aria-pressed", String(done));
+          button.setAttribute("aria-label", `${index + 1}ページを${done ? "未完了" : "完了"}にする`);
+        });
+      }
+
+      function bindTaskEvents() {
+        elements.taskInputs.forEach((input, index) => {
+          input.addEventListener("input", () => {
+            const tasks = ensureTasksForActiveDate();
+            tasks[index].text = input.value.slice(0, 120);
+            saveState();
+            updateTaskPresentation();
+          });
+
+          input.addEventListener("keydown", (event) => {
+            if (event.key !== "Enter") return;
+            event.preventDefault();
+            if (index < elements.taskInputs.length - 1) {
+              elements.taskInputs[index + 1].focus();
+            } else {
+              input.blur();
+            }
+          });
+        });
+
+        elements.taskChecks.forEach((checkbox, index) => {
+          checkbox.addEventListener("change", () => {
+            const tasks = ensureTasksForActiveDate();
+            tasks[index].done = checkbox.checked;
+            saveState();
+            updateTaskPresentation();
+          });
+        });
+      }
+
+      function validateTaskPayload(input) {
+        if (!input || !Array.isArray(input.tasks) || input.tasks.length !== 3) {
+          throw new TypeError("tasksには3件の項目が必要です");
+        }
+
+        input.tasks.forEach((task) => {
+          if (!task || typeof task.text !== "string" || typeof task.done !== "boolean") {
+            throw new TypeError("各項目にはtextとdoneが必要です");
+          }
+        });
+      }
+
+      function validateCompletedPages(input) {
+        if (!input || !Array.isArray(input.completedPages)) {
+          throw new TypeError("completedPagesは配列で指定してください");
+        }
+
+        const valid = input.completedPages.every(
+          (page) => Number.isInteger(page) && page >= 1 && page <= TOTAL_PAGES
+        );
+        const unique = new Set(input.completedPages).size === input.completedPages.length;
+
+        if (!valid || !unique) {
+          throw new TypeError("ページ番号は1〜18の重複しない整数で指定してください");
+        }
+      }
+
+      function registerWebMCPTools() {
+        const context = document.modelContext;
+        if (!context?.registerTool) return;
+
+        const lifecycle = new AbortController();
+        window.addEventListener("pagehide", () => lifecycle.abort(), { once: true });
+
+        const register = (tool) => {
+          try {
+            Promise.resolve(context.registerTool(tool, { signal: lifecycle.signal })).catch(() => {});
+          } catch (error) {
+            // WebMCP非対応・登録失敗時も、画面操作には影響させない。
+          }
+        };
+
+        register({
+          name: "read_rest_plan",
+          title: "休暇プランを確認",
+          description: "今日の予定、残り日数、今日やること、漫画の進捗を読み取ります。",
+          inputSchema: { type: "object", properties: {}, additionalProperties: false },
+          annotations: { readOnlyHint: true, untrustedContentHint: true },
+          execute() {
+            const today = japanDateParts();
+            const complete = state.mangaPages.filter(Boolean).length;
+            return {
+              date: today.key,
+              daysRemaining: daysUntilTarget(today),
+              tasks: ensureTasksForActiveDate().map((task) => ({ ...task })),
+              manga: { completed: complete, total: TOTAL_PAGES },
+              schedule: SCHEDULE.map((item) => ({ ...item }))
+            };
+          }
+        });
+
+        register({
+          name: "update_today_tasks",
+          title: "今日やることを更新",
+          description: "今日やること3件の文章と完了状態をまとめて更新します。",
+          inputSchema: {
+            type: "object",
+            properties: {
+              tasks: {
+                type: "array",
+                minItems: 3,
+                maxItems: 3,
+                items: {
+                  type: "object",
+                  properties: {
+                    text: { type: "string", maxLength: 120 },
+                    done: { type: "boolean" }
+                  },
+                  required: ["text", "done"],
+                  additionalProperties: false
+                }
+              }
+            },
+            required: ["tasks"],
+            additionalProperties: false
+          },
+          annotations: { readOnlyHint: false, untrustedContentHint: true },
+          execute(input) {
+            validateTaskPayload(input);
+            state.tasksByDate[activeTaskDate] = sanitizeTasks(input.tasks);
+            saveState();
+            renderTasks();
+            return { date: activeTaskDate, tasks: state.tasksByDate[activeTaskDate].map((task) => ({ ...task })) };
+          }
+        });
+
+        register({
+          name: "set_completed_manga_pages",
+          title: "漫画の完了ページを更新",
+          description: "ペン入れが終わったページ番号をまとめて設定し、進捗表示を更新します。",
+          inputSchema: {
+            type: "object",
+            properties: {
+              completedPages: {
+                type: "array",
+                uniqueItems: true,
+                items: { type: "integer", minimum: 1, maximum: 18 }
+              }
+            },
+            required: ["completedPages"],
+            additionalProperties: false
+          },
+          annotations: { readOnlyHint: false, untrustedContentHint: false },
+          execute(input) {
+            validateCompletedPages(input);
+            const completed = new Set(input.completedPages);
+            state.mangaPages = Array.from(
+              { length: TOTAL_PAGES },
+              (_, index) => completed.has(index + 1)
+            );
+            saveState();
+            renderManga();
+            return { completed: state.mangaPages.filter(Boolean).length, total: TOTAL_PAGES };
+          }
+        });
+      }
+
+      buildPageButtons();
+      bindTaskEvents();
+      renderDateContext();
+      renderManga();
+      registerWebMCPTools();
+
+      if (!storageAvailable) {
+        setStorageStatus("保存できませんでした。ブラウザの設定を確認してください", true);
+      }
+
+      window.setInterval(renderDateContext, 60 * 1000);
+      document.addEventListener("visibilitychange", () => {
+        if (document.visibilityState === "visible") renderDateContext();
+      });
+    })();
+  </script>
+</body>
+</html>
