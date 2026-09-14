@@ -2,12 +2,12 @@
 <html lang="ja">
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#0d2a4e">
   <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
   <meta name="apple-mobile-web-app-title" content="休暇プラン">
-  <meta name="description" content="2026年9月23日までの予定、今日やること、漫画18ページの進捗を管理するアプリです。">
+  <meta name="description" content="2026年9月23日23:59までのカウントダウン、予定、今日やること、漫画18ページの進捗を管理するアプリです。">
   <title>9/23までの休暇プラン</title>
   <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='16' fill='%230d2a4e'/%3E%3Cpath d='M19 33l9 9 18-21' fill='none' stroke='%230fd3b2' stroke-width='7' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E">
 
@@ -77,7 +77,7 @@
     .app {
       width: min(100%, 560px);
       margin: 0 auto;
-      padding: max(18px, env(safe-area-inset-top)) 16px max(34px, calc(env(safe-area-inset-bottom) + 18px));
+      padding: calc(24px + env(safe-area-inset-top, 0px)) 16px max(34px, calc(env(safe-area-inset-bottom, 0px) + 18px));
     }
 
     .app-header {
@@ -167,29 +167,39 @@
     }
 
     .countdown-line {
-      display: flex;
-      align-items: baseline;
+      display: grid;
+      grid-template-columns: 1.06fr 1fr 1fr;
+      align-items: end;
       gap: 8px;
       min-height: 100px;
       margin-top: 3px;
     }
 
+    .countdown-part {
+      display: flex;
+      min-width: 0;
+      align-items: baseline;
+      gap: 4px;
+      padding: 12px 8px 10px;
+      border: 1px solid rgba(255, 255, 255, 0.11);
+      border-radius: 15px;
+      background: rgba(255, 255, 255, 0.07);
+    }
+
     .countdown-number {
-      font-size: clamp(4.3rem, 22vw, 6rem);
+      min-width: 1.15em;
+      font-size: clamp(2.15rem, 10.5vw, 3.25rem);
       font-weight: 850;
       line-height: 1;
-      letter-spacing: -0.075em;
+      letter-spacing: -0.055em;
       font-variant-numeric: tabular-nums;
     }
 
-    .countdown-number.is-word {
-      font-size: clamp(2.6rem, 14vw, 4rem);
-      letter-spacing: -0.04em;
-    }
-
     .countdown-unit {
-      font-size: 1.35rem;
+      color: #d5e3f4;
+      font-size: 0.78rem;
       font-weight: 800;
+      white-space: nowrap;
     }
 
     .next-event {
@@ -626,6 +636,20 @@
         padding: 21px;
       }
 
+      .countdown-line {
+        gap: 5px;
+      }
+
+      .countdown-part {
+        gap: 2px;
+        padding-right: 6px;
+        padding-left: 6px;
+      }
+
+      .countdown-unit {
+        font-size: 0.7rem;
+      }
+
       .section-card {
         padding: 17px;
       }
@@ -670,10 +694,20 @@
     </header>
 
     <section class="countdown-card" aria-labelledby="deadline-label">
-      <p class="deadline-label" id="deadline-label">2026年9月23日まで</p>
+      <p class="deadline-label" id="deadline-label">2026年9月23日 23:59まで</p>
       <div class="countdown-line" aria-live="polite" aria-atomic="true">
-        <span class="countdown-number" id="countdown-number">--</span>
-        <span class="countdown-unit" id="countdown-unit">日</span>
+        <span class="countdown-part">
+          <span class="countdown-number" id="countdown-days">--</span>
+          <span class="countdown-unit">日</span>
+        </span>
+        <span class="countdown-part">
+          <span class="countdown-number" id="countdown-hours">--</span>
+          <span class="countdown-unit">時間</span>
+        </span>
+        <span class="countdown-part">
+          <span class="countdown-number" id="countdown-minutes">--</span>
+          <span class="countdown-unit">分</span>
+        </span>
       </div>
       <p class="next-event" id="next-event">予定を確認しています</p>
     </section>
@@ -790,8 +824,8 @@
     (() => {
       "use strict";
 
-      const TARGET_DATE = { year: 2026, month: 9, day: 23 };
-      const DAY_MS = 24 * 60 * 60 * 1000;
+      const TARGET_END = new Date("2026-09-24T00:00:00+09:00").getTime();
+      const MINUTE_MS = 60 * 1000;
       const STATE_KEY = "kyuka-plan-2026-v1";
       const TOTAL_PAGES = 18;
       const INITIAL_COMPLETE_PAGES = 10;
@@ -802,8 +836,9 @@
 
       const elements = {
         todayDate: document.getElementById("today-date"),
-        countdownNumber: document.getElementById("countdown-number"),
-        countdownUnit: document.getElementById("countdown-unit"),
+        countdownDays: document.getElementById("countdown-days"),
+        countdownHours: document.getElementById("countdown-hours"),
+        countdownMinutes: document.getElementById("countdown-minutes"),
         nextEvent: document.getElementById("next-event"),
         scheduleItems: [...document.querySelectorAll(".schedule-item")],
         taskCount: document.getElementById("task-count"),
@@ -921,35 +956,31 @@
         };
       }
 
-      function calendarDayNumber(year, month, day) {
-        return Date.UTC(year, month - 1, day) / DAY_MS;
-      }
+      function timeUntilTarget(date = new Date()) {
+        const difference = TARGET_END - date.getTime();
+        if (difference <= 0) {
+          return { days: 0, hours: 0, minutes: 0, finished: true };
+        }
 
-      function daysUntilTarget(parts) {
-        return calendarDayNumber(TARGET_DATE.year, TARGET_DATE.month, TARGET_DATE.day)
-          - calendarDayNumber(parts.year, parts.month, parts.day);
+        const totalMinutes = Math.ceil(difference / MINUTE_MS);
+        return {
+          days: Math.floor(totalMinutes / (24 * 60)),
+          hours: Math.floor((totalMinutes % (24 * 60)) / 60),
+          minutes: totalMinutes % 60,
+          finished: false
+        };
       }
 
       function renderDateContext() {
         const today = japanDateParts();
-        const remaining = daysUntilTarget(today);
+        const remaining = timeUntilTarget();
 
         elements.todayDate.textContent = `${today.month}月${today.day}日（${today.weekday}）`;
         elements.todayDate.dateTime = today.key;
 
-        elements.countdownNumber.classList.remove("is-word");
-        if (remaining > 0) {
-          elements.countdownNumber.textContent = String(remaining);
-          elements.countdownUnit.textContent = "日";
-        } else if (remaining === 0) {
-          elements.countdownNumber.textContent = "今日";
-          elements.countdownNumber.classList.add("is-word");
-          elements.countdownUnit.textContent = "";
-        } else {
-          elements.countdownNumber.textContent = "終了";
-          elements.countdownNumber.classList.add("is-word");
-          elements.countdownUnit.textContent = "";
-        }
+        elements.countdownDays.textContent = String(remaining.days);
+        elements.countdownHours.textContent = String(remaining.hours).padStart(2, "0");
+        elements.countdownMinutes.textContent = String(remaining.minutes).padStart(2, "0");
 
         const todayEvent = SCHEDULE.find((item) => item.date === today.key);
         const upcomingEvent = SCHEDULE.find((item) => item.date > today.key);
@@ -958,7 +989,7 @@
           elements.nextEvent.textContent = `今日の予定｜${todayEvent.label}`;
         } else if (upcomingEvent) {
           elements.nextEvent.textContent = `次の予定｜${upcomingEvent.shortDate} ${upcomingEvent.label}`;
-        } else if (remaining >= 0) {
+        } else if (!remaining.finished) {
           elements.nextEvent.textContent = "目標日｜9/23 ペン入れ完了";
         } else {
           elements.nextEvent.textContent = "9/23の目標日を過ぎました";
@@ -1139,9 +1170,11 @@
           execute() {
             const today = japanDateParts();
             const complete = state.mangaPages.filter(Boolean).length;
+            const remaining = timeUntilTarget();
             return {
               date: today.key,
-              daysRemaining: daysUntilTarget(today),
+              deadline: "2026-09-23T23:59:59+09:00",
+              timeRemaining: remaining,
               tasks: ensureTasksForActiveDate().map((task) => ({ ...task })),
               manga: { completed: complete, total: TOTAL_PAGES },
               schedule: SCHEDULE.map((item) => ({ ...item }))
